@@ -45,7 +45,7 @@ export default function Home() {
                 </div>
 
                 <h3>Upload Your Floor Plan</h3>
-                <p>Supports JPEG, PNG, formats upto 10MB</p>
+                <p>Supports JPEG, PNG, formats up to 10MB</p>
               </div>
 
               <p>Upload images</p>
@@ -65,7 +65,7 @@ export default function Home() {
           <div className="projects-grid">
             <div className="project-card group">
               <div className="preview">
-                <img src="https://roomify-mlhuk267-dfwu1i.puter.site/projects/1770803585402/rendered.png" alt="project" />
+                <img src="https://roomify-mlhuk267-dfwu1i.puter.site/projects/1770803585402/rendered.png" alt="Rendered preview of Project Manhattan" />
                 <div className="badge">
                   <span>Community</span>
                 </div>
@@ -76,7 +76,7 @@ export default function Home() {
                   <h3>Project Manhattan</h3>
                   <div className="meta">
                     <Clock />
-                    <span>{new Date('01.01.2027').toLocaleDateString()}
+                    <span>{new Date("2027-01-01").toLocaleDateString()}
                       {" "}<span>By Jason Stark</span>
                     </span>
                   </div>

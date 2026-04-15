@@ -5,13 +5,16 @@ import {
   PROGRESS_INTERVAL_MS,
   PROGRESS_STEP,
   REDIRECT_DELAY_MS,
+  MAX_UPLOAD_BYTES,
+  ACCEPTED_FILE_TYPES,
 } from "../lib/constants";
 
 type UploadProps = {
   onComplete?: (base64: string) => void;
+  onError?: (error: string) => void;
 };
 
-const Upload = ({ onComplete }: UploadProps) => {
+const Upload = ({ onComplete, onError }: UploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -33,6 +36,16 @@ const Upload = ({ onComplete }: UploadProps) => {
 
   const processFile = (selectedFile: File) => {
     if (!isSignedIn) {
+      return;
+    }
+
+    // Validation
+    if (selectedFile.size > MAX_UPLOAD_BYTES) {
+      onError?.("File size exceeds the maximum allowed (50MB).");
+      return;
+    }
+    if (!ACCEPTED_FILE_TYPES.includes(selectedFile.type)) {
+      onError?.("Invalid file type. Only JPG, JPEG, and PNG are allowed.");
       return;
     }
 
@@ -62,6 +75,34 @@ const Upload = ({ onComplete }: UploadProps) => {
           return nextProgress;
         });
       }, PROGRESS_INTERVAL_MS);
+    };
+
+    reader.onerror = () => {
+      if (progressInterval.current) {
+        window.clearInterval(progressInterval.current);
+        progressInterval.current = null;
+      }
+      if (redirectTimeout.current) {
+        window.clearTimeout(redirectTimeout.current);
+        redirectTimeout.current = null;
+      }
+      setFile(null);
+      setProgress(0);
+      onError?.("Failed to read the file.");
+    };
+
+    reader.onabort = () => {
+      if (progressInterval.current) {
+        window.clearInterval(progressInterval.current);
+        progressInterval.current = null;
+      }
+      if (redirectTimeout.current) {
+        window.clearTimeout(redirectTimeout.current);
+        redirectTimeout.current = null;
+      }
+      setFile(null);
+      setProgress(0);
+      onError?.("File reading was aborted.");
     };
 
     reader.readAsDataURL(selectedFile);

@@ -1,18 +1,23 @@
 import React from "react";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 
 const visualizeId = () => {
-  const { id } = useParams<{ id: string }>();
-  const image = id ? localStorage.getItem(`roomify-image-${id}`) : null;
+  const location = useLocation()
+  const {initialImage, name} = location.state || {}
 
   return (
-    <div>
-      {image ? (
-        <img src={image} alt="Uploaded floor plan" />
-      ) : (
-        <p>Image not found for ID: {id}</p>
+   <section>
+    <h1>{name || "Untitled Project"}</h1>
+
+    <div className="visualizer">
+      {initialImage && (
+        <div className="image-container">
+          <h2>Source Image</h2>
+          <img src={initialImage} alt="Source floor plan" />
+        </div>
       )}
     </div>
+   </section>
   );
 };
 

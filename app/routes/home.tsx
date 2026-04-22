@@ -36,12 +36,12 @@ export default function Home() {
       return;
     }
 
-    setProjects((prev) => [newItem, ...prev]);
+    setProjects((prev) => [saved, ...prev]);
 
     navigate(`/visualize/${newId}`, {
       state: {
         initialImage: saved.sourceImage,
-        initialRendered: saved.renderedImage || null,
+        initialRender: saved.renderedImage || null,
         name,
       },
     });

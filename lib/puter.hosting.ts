@@ -9,9 +9,6 @@ import {
   isHostedUrl,
 } from "./utils";
 
-type HostingConfig = { subdomain: string };
-type HostedAsset = { url: string };
-
 export const getOrCreateHostingConfig =
   async (): Promise<HostingConfig | null> => {
     const existing = (await puter.kv.get(
@@ -26,6 +23,9 @@ export const getOrCreateHostingConfig =
       const created = await puter.hosting.create(subdomain, ".");
 
       const record = { subdomain: created.subdomain };
+
+      // Persist hosting config to KV
+      await puter.kv.set(HOSTING_CONFIG_KEY, record);
 
       return record;
     } catch (error) {

@@ -17,25 +17,50 @@ export async function fetchAsDataURL(url: string): Promise<string> {
   });
 }
 
-export const generate3DView = async ({sourceImage}: Generate3DViewParams) => {
-    const dataUrl = sourceImage.startsWith("data:") ? sourceImage : await fetchAsDataURL(sourceImage)
-    const base64Data = dataUrl.split(",")[1]
-    const mimeType = dataUrl.split(";")[0].split(":")[1]
-
-    if(!mimeType || !base64Data) throw new Error("Invalid image data")
-
-    const response = puter.ai.txt2img(ROOMIFY_RENDER_PROMPT, {
-        provider: 'gemini',
-        model: "gemini-2.5-flash-image-preview",
-        input_image: base64Data,
-        input_image_mime_type: mimeType,
-        ratio: {w: 1024, h: 1024},
-    })   
-    
-    const rawImageUrl = (response as HTMLImageElement).src ?? null
-    if(!rawImageUrl) return {renderedImage: null, renderedPath: undefined}
-
-    const renderedImage = rawImageUrl.startsWith("data:") ? rawImageUrl : await fetchAsDataURL(rawImageUrl)
-
-    return {renderedImage, renderedPath: undefined}
+interface Generate3DViewParams {
+  sourceImage: string;
 }
+
+interface Generate3DViewResult {
+  renderedImage: string | null;
+  renderedPath: string | undefined;
+}
+
+export const generate3DView = async ({
+  sourceImage,
+}: Generate3DViewParams): Promise<Generate3DViewResult> => {
+  const dataUrl = sourceImage.startsWith("data:")
+    ? sourceImage
+    : await fetchAsDataURL(sourceImage);
+  const dataUrlRegex = /^data:([^;]+)(;base64)?,(.+)$/;
+  const match = dataUrl.match(dataUrlRegex);
+  if (!match) throw new Error("Invalid data URL");
+  const mimeType = match[1];
+  const isBase64 = !!match[2];
+  let base64Data = match[3];
+  if (!isBase64) {
+    // If not base64, URL-decode and convert to base64
+    const decoded = decodeURIComponent(base64Data);
+    base64Data = btoa(decoded);
+  }
+  if (!mimeType || !base64Data) throw new Error("Invalid image data");
+
+  try {
+    const response = await puter.ai.txt2img(ROOMIFY_RENDER_PROMPT, {
+      model: "gemini-2.5-flash-image-preview",
+      input_image: base64Data,
+      input_image_mime_type: mimeType,
+    });
+
+    const rawImageUrl = (response as HTMLImageElement).src ?? null;
+    if (!rawImageUrl) return { renderedImage: null, renderedPath: undefined };
+
+    const renderedImage = rawImageUrl.startsWith("data:")
+      ? rawImageUrl
+      : await fetchAsDataURL(rawImageUrl);
+
+    return { renderedImage, renderedPath: undefined };
+  } catch (error) {
+    throw error;
+  }
+};

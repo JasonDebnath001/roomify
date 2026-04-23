@@ -13,6 +13,7 @@ const VisualizeId = () => {
   const hasInitialGenerated = useRef(false);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(
     initialRender || null,
   );
@@ -23,6 +24,7 @@ const VisualizeId = () => {
     if (!initialImage) return;
     try {
       setIsProcessing(true);
+      setGenerationError(null);
       const result = await generate3DView({ sourceImage: initialImage });
       if (result.renderedImage) {
         setCurrentImage(result.renderedImage);
@@ -31,6 +33,7 @@ const VisualizeId = () => {
       }
     } catch (error) {
       console.error("Error during generation:", error);
+      setGenerationError(error.message || "Generation failed");
     } finally {
       setIsProcessing(false);
     }
@@ -64,7 +67,7 @@ const VisualizeId = () => {
           <div className="panel-header">
             <div className="panel-meta">
               <p>Project</p>
-              <h2>{"Untitled Project"}</h2>
+              <h2>{name ?? "Untitled Project"}</h2>
               <p className="note">Created by You</p>
             </div>
 
@@ -110,6 +113,14 @@ const VisualizeId = () => {
               </div>
             )}
           </div>
+          {generationError && (
+            <div className="error-ui">
+              <p>Error: {generationError}</p>
+              <Button onClick={runGeneration} size="sm">
+                <RefreshCcw className="w-4 h-4 mr-2" /> Retry
+              </Button>
+            </div>
+          )}
         </div>
       </section>
     </div>

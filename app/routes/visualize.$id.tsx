@@ -17,15 +17,17 @@ const VisualizeId = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(
     initialRender || null,
   );
+  const [fetchedProject, setFetchedProject] = useState<any>(null);
 
   const handleBack = () => navigate("/");
 
   const runGeneration = async () => {
-    if (!initialImage) return;
+    const imageToUse = initialImage || fetchedProject?.sourceImage;
+    if (!imageToUse) return;
     try {
       setIsProcessing(true);
       setGenerationError(null);
-      const result = await generate3DView({ sourceImage: initialImage });
+      const result = await generate3DView({ sourceImage: imageToUse });
       if (result.renderedImage) {
         setCurrentImage(result.renderedImage);
 
@@ -40,15 +42,33 @@ const VisualizeId = () => {
   };
 
   useEffect(() => {
-    if (!initialImage || hasInitialGenerated.current) return;
-    if (initialRender) {
-      setCurrentImage(initialRender);
+    if (!initialImage && id) {
+      // Fetch project from API
+      fetch(`/api/projects/get?id=${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.project) {
+            setFetchedProject(data.project);
+            setCurrentImage(
+              data.project.renderedImage || data.project.sourceImage,
+            );
+          }
+        })
+        .catch((err) => console.error("Failed to fetch project:", err));
+    }
+  }, [initialImage, id]);
+
+  useEffect(() => {
+    const imageToUse = initialImage || fetchedProject?.sourceImage;
+    if (!imageToUse || hasInitialGenerated.current) return;
+    if (initialRender || fetchedProject?.renderedImage) {
+      setCurrentImage(initialRender || fetchedProject.renderedImage);
       hasInitialGenerated.current = true;
       return;
     }
     hasInitialGenerated.current = true;
     runGeneration();
-  }, [initialImage, initialRender]);
+  }, [initialImage, initialRender, fetchedProject]);
 
   return (
     <div className="visualizer">

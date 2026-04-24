@@ -29,22 +29,21 @@ export default function Home() {
       timestamp: Date.now(),
     };
 
-    const saved = await createProject({ item: newItem });
-
-    if (!saved) {
-      console.warn("Failed to create project");
-      return;
-    }
-
-    setProjects((prev) => [saved, ...prev]);
-
     navigate(`/visualize/${newId}`, {
       state: {
-        initialImage: saved.sourceImage,
-        initialRender: saved.renderedImage || null,
+        initialImage: base64Image,
+        initialRender: null,
         name,
       },
     });
+
+    // Perform project creation in the background to avoid blocking navigation
+    createProject({ item: newItem })
+      .then((saved) => {
+        if (saved) setProjects((prev) => [saved, ...prev]);
+      })
+      .catch((err) => console.error("Failed to persist project:", err));
+
     return true;
   };
 

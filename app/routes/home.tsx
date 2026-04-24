@@ -16,35 +16,39 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const [projects, setProjects] = useState<DesignItem[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
   const handleUploadComplete = async (base64Image: string) => {
-    const newId = Date.now().toString();
-    const name = `Residence ${newId}`;
+    setIsCreating(true);
+    try {
+      const newId = Date.now().toString();
+      const name = `Residence ${newId}`;
 
-    const newItem = {
-      id: newId,
-      name,
-      sourceImage: base64Image,
-      renderedImage: undefined,
-      timestamp: Date.now(),
-    };
-
-    navigate(`/visualize/${newId}`, {
-      state: {
-        initialImage: base64Image,
-        initialRender: null,
+      const newItem = {
+        id: newId,
         name,
-      },
-    });
+        sourceImage: base64Image,
+        renderedImage: undefined,
+        timestamp: Date.now(),
+      };
 
-    // Perform project creation in the background to avoid blocking navigation
-    createProject({ item: newItem })
-      .then((saved) => {
-        if (saved) setProjects((prev) => [saved, ...prev]);
-      })
-      .catch((err) => console.error("Failed to persist project:", err));
+      const saved = await createProject({ item: newItem });
+      if (saved) setProjects((prev) => [saved, ...prev]);
 
-    return true;
+      navigate(`/visualize/${newId}`, {
+        state: {
+          initialImage: base64Image,
+          initialRender: null,
+          name,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to persist project:", err);
+      // Still navigate even if save fails?
+      // Perhaps show error, but for now, navigate anyway
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleUploadError = (error: string) => {
@@ -82,6 +86,11 @@ export default function Home() {
 
         <div id="upload" className="upload-shell">
           <div className="grid-overlay" />
+          {isCreating && (
+            <div className="loading-overlay">
+              <div className="loading-spinner">Creating project...</div>
+            </div>
+          )}
           <div className="upload-card">
             <div className="upload-head">
               <div className="upload-icon">

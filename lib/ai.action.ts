@@ -29,26 +29,21 @@ interface Generate3DViewResult {
 export const generate3DView = async ({
   sourceImage,
 }: Generate3DViewParams): Promise<Generate3DViewResult> => {
-  try {
-    const dataUrl = sourceImage.startsWith("data:")
-      ? sourceImage
-      : await fetchAsDataURL(sourceImage);
+  const dataUrl = sourceImage.startsWith("data:")
+    ? sourceImage
+    : await fetchAsDataURL(sourceImage);
 
-    const response = await puter.ai.txt2img({
-      prompt: ROOMIFY_RENDER_PROMPT,
-      model: "flux-schnell",
-      img: dataUrl,
-    } as any);
+  const response = await puter.ai.txt2img({
+    prompt: ROOMIFY_RENDER_PROMPT,
+    model: "flux-schnell",
+  });
 
-    const rawImageUrl = (response as HTMLImageElement).src ?? null;
-    if (!rawImageUrl) return { renderedImage: null, renderedPath: undefined };
+  const rawImageUrl = (response as HTMLImageElement).src ?? null;
+  if (!rawImageUrl) return { renderedImage: null, renderedPath: undefined };
 
-    const renderedImage = rawImageUrl.startsWith("data:")
-      ? rawImageUrl
-      : await fetchAsDataURL(rawImageUrl);
+  const renderedImage = rawImageUrl.startsWith("data:")
+    ? rawImageUrl
+    : await fetchAsDataURL(rawImageUrl);
 
-    return { renderedImage, renderedPath: undefined };
-  } catch (error) {
-    throw error;
-  }
+  return { renderedImage, renderedPath: undefined };
 };

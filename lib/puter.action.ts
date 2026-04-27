@@ -99,34 +99,7 @@ export const createProject = async ({
   }
 };
 
-export const getProject = async (id: string): Promise<DesignItem | null> => {
-  if (!PUTER_WORKER_URL) {
-    console.warn("Puter worker URL not configured, cannot get project");
-    return null;
-  }
-
-  try {
-    const response = await puter.workers.exec(
-      `${PUTER_WORKER_URL}/api/projects/get?id=${id}`,
-      {
-        method: "GET",
-      },
-    );
-
-    if (!response.ok) {
-      console.error("Failed to get project, response not ok", response);
-      return null;
-    }
-
-    const data = (await response.json()) as { project?: DesignItem | null };
-    return data.project || null;
-  } catch (error) {
-    console.log("Failed to get project", error);
-    return null;
-  }
-};
-
-export const getProjects = async () => {
+export const getProjects = async (): Promise<DesignItem[]> => {
   if (!PUTER_WORKER_URL) {
     console.warn("Puter worker URL not configured, cannot fetch projects");
     return [];
@@ -145,28 +118,28 @@ export const getProjects = async () => {
     }
 
     const data = (await response.json()) as { projects?: DesignItem[] | null };
-    return Array.isArray(data.projects) ? data?.projects : [];
+    return Array.isArray(data.projects) ? data.projects : [];
   } catch (error) {
     console.error("Failed to fetch projects", error);
     return [];
   }
 };
 
-export const getProjectById = async ({ id }: { id: string }) => {
+export const getProjectById = async ({
+  id,
+}: {
+  id: string;
+}): Promise<DesignItem | null> => {
   if (!PUTER_WORKER_URL) {
     console.warn("Missing VITE_PUTER_WORKER_URL; skipping project fetch.");
     return null;
   }
-
-  console.log("Fetching project with ID:", id);
 
   try {
     const response = await puter.workers.exec(
       `${PUTER_WORKER_URL}/api/projects/get?id=${encodeURIComponent(id)}`,
       { method: "GET" },
     );
-
-    console.log("Fetch project response:", response);
 
     if (!response.ok) {
       console.error("Failed to fetch project:", await response.text());
@@ -177,11 +150,13 @@ export const getProjectById = async ({ id }: { id: string }) => {
       project?: DesignItem | null;
     };
 
-    console.log("Fetched project data:", data);
-
     return data?.project ?? null;
   } catch (error) {
     console.error("Failed to fetch project:", error);
     return null;
   }
+};
+
+export const getProject = async (id: string): Promise<DesignItem | null> => {
+  return getProjectById({ id });
 };

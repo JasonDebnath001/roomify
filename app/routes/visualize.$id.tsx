@@ -24,7 +24,7 @@ const VisualizeId = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(
     initialRender || null,
   );
-  const [fetchedProject, setFetchedProject] = useState<any>(null);
+  const [fetchedProject, setFetchedProject] = useState<DesignItem | null>(null);
 
   const handleBack = () => navigate("/");
 
@@ -43,18 +43,19 @@ const VisualizeId = () => {
           return;
         }
 
+        const visibility = fetchedProject.isPublic ? "public" : "private";
         const updatedItem = {
           ...fetchedProject,
           renderedImage: result.renderedImage,
           renderedPath: result.renderedPath,
           timestamp: Date.now(),
           ownerId: fetchedProject.ownerId ?? userId ?? null,
-          isPublic: fetchedProject.isPublic ?? false,
+          isPublic: visibility === "public",
         };
 
         const saved = await createProject({
           item: updatedItem,
-          visibility: "private",
+          visibility,
         });
 
         if (saved) {
@@ -64,15 +65,15 @@ const VisualizeId = () => {
       }
     } catch (error) {
       console.error("Error during generation:", error);
-      setGenerationError(error.message || "Generation failed");
+      const message = error instanceof Error ? error.message : String(error);
+      setGenerationError(message || "Generation failed");
     } finally {
       setIsProcessing(false);
     }
   };
 
   useEffect(() => {
-    if (!initialImage && id) {
-      // Fetch project using puter.action
+    if (id) {
       getProject(id)
         .then((project) => {
           if (project) {
@@ -82,7 +83,7 @@ const VisualizeId = () => {
         })
         .catch((err) => console.error("Failed to fetch project:", err));
     }
-  }, [initialImage, id]);
+  }, [id]);
 
   useEffect(() => {
     const imageToUse = initialImage || fetchedProject?.sourceImage;

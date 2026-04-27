@@ -21,21 +21,37 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let cancelled = false;
     const loadProjects = async () => {
       try {
         const fetchedProjects = await getProjects();
-        setProjects(fetchedProjects);
+        if (!cancelled) {
+          setProjects((prev) => {
+            const mergedMap = new Map<string, DesignItem>();
+            prev.forEach((p) => mergedMap.set(p.id, p));
+            fetchedProjects.forEach((p) => {
+              if (!mergedMap.has(p.id)) {
+                mergedMap.set(p.id, p);
+              }
+            });
+            return Array.from(mergedMap.values());
+          });
+        }
       } catch (error) {
         console.error("Failed to load projects:", error);
       }
     };
     loadProjects();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   const handleUploadComplete = async (base64Image: string) => {
+    if (isCreatingProjectRef.current) return;
+    isCreatingProjectRef.current = true;
     setIsCreating(true);
     try {
-      if (isCreatingProjectRef.current) return false;
-      const newId = Date.now().toString();
+      const newId = crypto.randomUUID();
       const name = `Residence ${newId}`;
 
       const newItem = {
@@ -61,6 +77,7 @@ export default function Home() {
       // Still navigate even if save fails?
       // Perhaps show error, but for now, navigate anyway
     } finally {
+      isCreatingProjectRef.current = false;
       setIsCreating(false);
     }
   };

@@ -33,8 +33,20 @@ export const generate3DView = async ({
     ? sourceImage
     : await fetchAsDataURL(sourceImage);
 
+  // Use chat with vision to analyze the source image and generate a detailed prompt
+  const analysisPrompt = `Analyze this floor plan image and provide a detailed description of the layout, rooms, walls, doors, windows, and any furniture or fixtures shown. Be very specific about dimensions, positions, and types of rooms.`;
+
+  const analysisResponse = await puter.ai.chat(analysisPrompt, dataUrl, {
+    model: "gpt-5.4-nano",
+  });
+
+  const detailedDescription = analysisResponse || "";
+
+  // Combine the analysis with the render prompt
+  const fullPrompt = `${ROOMIFY_RENDER_PROMPT}\n\nFloor plan details: ${detailedDescription}`;
+
   const response = await puter.ai.txt2img({
-    prompt: ROOMIFY_RENDER_PROMPT,
+    prompt: fullPrompt,
     model: "flux-schnell",
   });
 

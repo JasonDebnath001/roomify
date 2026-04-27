@@ -1,13 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
+import {
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useParams,
+} from "react-router";
 import { generate3DView } from "../../lib/ai.action";
 import { Box, Download, RefreshCcw, Share, X } from "lucide-react";
 import Button from "../../components/ui/Button";
+import { createProject, getProject } from "../../lib/puter.action";
 
 const VisualizeId = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
+  const { userId } = useOutletContext<AuthContext>();
   const { initialImage, initialRender, name } = location.state || {};
 
   const hasInitialGenerated = useRef(false);
@@ -31,7 +38,29 @@ const VisualizeId = () => {
       if (result.renderedImage) {
         setCurrentImage(result.renderedImage);
 
-        // update the project with the rendered image
+        if (!fetchedProject) {
+          console.error("No project found to update");
+          return;
+        }
+
+        const updatedItem = {
+          ...fetchedProject,
+          renderedImage: result.renderedImage,
+          renderedPath: result.renderedPath,
+          timestamp: Date.now(),
+          ownerId: fetchedProject.ownerId ?? userId ?? null,
+          isPublic: fetchedProject.isPublic ?? false,
+        };
+
+        const saved = await createProject({
+          item: updatedItem,
+          visibility: "private",
+        });
+
+        if (saved) {
+          setFetchedProject(saved);
+          setCurrentImage(saved.renderedImage);
+        }
       }
     } catch (error) {
       console.error("Error during generation:", error);
@@ -43,15 +72,12 @@ const VisualizeId = () => {
 
   useEffect(() => {
     if (!initialImage && id) {
-      // Fetch project from API
-      fetch(`/api/projects/get?id=${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.project) {
-            setFetchedProject(data.project);
-            setCurrentImage(
-              data.project.renderedImage || data.project.sourceImage,
-            );
+      // Fetch project using puter.action
+      getProject(id)
+        .then((project) => {
+          if (project) {
+            setFetchedProject(project);
+            setCurrentImage(project.renderedImage || project.sourceImage);
           }
         })
         .catch((err) => console.error("Failed to fetch project:", err));

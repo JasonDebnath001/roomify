@@ -4,8 +4,8 @@ import type { Route } from "./+types/home";
 import Button from "../../components/ui/Button";
 import Upload from "../../components/Upload";
 import { useNavigate } from "react-router";
-import { useState } from "react";
-import { createProject } from "../../lib/puter.action";
+import { useEffect, useRef, useState } from "react";
+import { createProject, getProjects } from "../../lib/puter.action";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -16,11 +16,25 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const [projects, setProjects] = useState<DesignItem[]>([]);
+  const isCreatingProjectRef = useRef(false);
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const fetchedProjects = await getProjects();
+        setProjects(fetchedProjects);
+      } catch (error) {
+        console.error("Failed to load projects:", error);
+      }
+    };
+    loadProjects();
+  }, []);
   const handleUploadComplete = async (base64Image: string) => {
     setIsCreating(true);
     try {
+      if (isCreatingProjectRef.current) return false;
       const newId = Date.now().toString();
       const name = `Residence ${newId}`;
 
